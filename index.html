@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+  <!-- Default to light mode -->
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SweetGift</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      /* Custom colors for Tailwind CSS */
+      :root {
+        --color-soft-black: #e0e0e0; /* Light text, dark mode background */
+        --color-light-gray: #1a1a1a; /* Light mode background, dark text */
+        --color-navy-blue: #00ce7c; /* Accent color */
+        --color-bold-green: #021d49; /* Dark background, dark mode accent */
+      }
+
+      /* Extend Tailwind's default theme with custom colors */
+      .tailwind-config {
+        display: none; /* Hide this element, it's just for Tailwind config */
+      }
+
+      /* Ensure the cosmic background canvas fills the screen and is behind other content */
+      #cosmic-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1; /* Place behind other content */
+        background-color: var(
+          --color-light-gray
+        ); /* Default background for canvas container */
+        transition: background-color 0.5s ease-in-out; /* Smooth transition for background color */
+      }
+
+      /* Dark mode specific background color for the cosmic canvas container */
+      html.dark #cosmic-background {
+        background-color: var(--color-bold-green);
+      }
+
+      /* Container for the 3D bottle model */
+      #bottle-container {
+        width: 100%;
+        height: 500px; /* Increased height to make the bottle cover more space */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 1.5rem; /* Equivalent to mt-6 */
+        background-color: transparent; /* Ensure it's transparent to see cosmic background */
+      }
+
+      /* Make the canvas element fill its container */
+      #bottle-container canvas {
+        display: block;
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      /* Styles for the message box */
+      .message-box-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 3s ease-in-out, visibility 3s ease-in-out; /* Changed to 3s */
+      }
+
+      .message-box-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .message-box {
+        background-color: white;
+        padding: 2rem;
+        border-radius: 0.75rem; /* rounded-xl */
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* shadow-lg */
+        text-align: center;
+        max-width: 90%;
+        width: 400px;
+        transform: translateY(-20px);
+        opacity: 0;
+        transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+      }
+
+      .message-box-overlay.active .message-box {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .message-box.dark {
+        background-color: var(--color-bold-green);
+        /* Text colors will be overridden by inline styles from JS */
+      }
+      /* Default text colors for light mode, overridden by JS for matching colors */
+      .message-box-title {
+        font-size: 1.5rem; /* text-2xl */
+        font-weight: 700; /* font-bold */
+        margin-bottom: 1rem;
+        color: var(--color-navy-blue); /* Default for light mode */
+      }
+
+      .message-box-content {
+        font-size: 1.125rem; /* text-lg */
+        margin-bottom: 0.5rem;
+        color: #333; /* Default for light mode */
+      }
+
+      .message-box-source {
+        font-size: 0.875rem; /* text-sm */
+        color: #666; /* Default for light mode */
+        margin-bottom: 1.5rem;
+      }
+
+      .message-box-close-button {
+        background-color: var(--color-navy-blue); /* Default for light mode */
+        color: var(--color-bold-green); /* Default for light mode */
+        padding: 0.75rem 1.5rem;
+        border-radius: 9999px; /* rounded-full */
+        font-weight: 600; /* font-semibold */
+        cursor: pointer;
+        transition: background-color 0.3s ease-in-out;
+      }
+
+      .message-box-close-button:hover {
+        background-color: rgba(0, 206, 124, 0.8); /* 80% opacity of navy-blue */
+      }
+
+      /* Styles for the gold gradient text with sparkle animation */
+      .gold-gradient-text {
+        background: linear-gradient(
+          90deg,
+          #ffd700,
+          #ffa500,
+          #ffd700
+        ); /* Gold gradient */
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent; /* Make text transparent to show gradient */
+        -webkit-text-fill-color: transparent; /* For Safari */
+        background-size: 200% 100%; /* Make background wider than text for animation */
+        animation: sparkle-animation 3s linear infinite;
+      }
+
+      @keyframes sparkle-animation {
+        0% {
+          background-position: 200% 0; /* Start position for sparkle */
+        }
+        100% {
+          background-position: -200% 0; /* End position for sparkle */
+        }
+      }
+    </style>
+    <script>
+      tailwind.config = {
+        darkMode: "class", // Enable dark mode based on the 'dark' class on the html element
+        theme: {
+          extend: {
+            colors: {
+              "soft-black": "var(--color-soft-black)",
+              "light-gray": "var(--color-light-gray)",
+              "navy-blue": "var(--color-navy-blue)",
+              "bold-green": "var(--color-bold-green)",
+              // Add the note colors to Tailwind config for easier use
+              "note-purple": "#503156",
+              "note-blue": "#6ea4bf",
+              "note-red": "#a31621",
+              "note-green": "#bcd8c1",
+            },
+            fontFamily: {
+              inter: ["Inter", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <!-- Apply base styles for light mode, and dark: prefix for dark mode -->
+  <body
+    class="font-inter bg-light-gray text-soft-black min-h-screen flex items-center justify-center p-4 dark:bg-bold-green dark:text-soft-black"
+  >
+    <!-- Container for the Three.js cosmic background -->
+    <div id="cosmic-background"></div>
+
+    <!-- Overlay for the fade-in animation -->
+    <div
+      id="fade-overlay"
+      class="fixed inset-0 bg-light-gray z-50 transition-opacity duration-[4000ms] ease-in-out dark:bg-bold-green"
+    ></div>
+
+    <!-- Main content of the SPA -->
+    <div
+      id="main-content"
+      class="opacity-0 transition-opacity duration-[4000ms] ease-in-out w-full max-w-4xl mx-auto rounded-xl shadow-lg p-8 md:p-12 flex flex-col items-center text-center dark:text-soft-black"
+    >
+      <h1 class="text-4xl md:text-6xl font-extrabold gold-gradient-text mb-6">
+        One For All
+      </h1>
+      <p
+        class="text-lg md:text-xl text-soft-black mb-8 max-w-2xl dark:text-soft-black"
+      >
+        Look within yourself to save yourself from your other self.<br />Only
+        then will your true self reveal itself
+      </p>
+
+      <!-- Four buttons in a 2x2 grid -->
+      <div class="grid grid-cols-2 gap-4 mb-8 w-full max-w-md">
+        <button
+          id="love-button"
+          class="bg-note-red hover:bg-opacity-80 text-soft-black font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-red focus:ring-opacity-75"
+          data-theme="Love"
+        >
+          Love
+        </button>
+        <button
+          id="temptation-button"
+          class="bg-note-purple hover:bg-opacity-80 text-soft-black font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-purple focus:ring-opacity-75"
+          data-theme="Temptation"
+        >
+          Temptation
+        </button>
+        <button
+          id="anxiety-button"
+          class="bg-note-blue hover:bg-opacity-80 text-bold-green font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-blue focus:ring-opacity-75"
+          data-theme="Anxiety"
+        >
+          Anxiety
+        </button>
+        <button
+          id="hope-button"
+          class="bg-note-green hover:bg-opacity-80 text-bold-green font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-green focus:ring-opacity-75"
+          data-theme="Hope"
+        >
+          Hope
+        </button>
+      </div>
+
+      <!-- Container for the 3D bottle model -->
+      <div id="bottle-container"></div>
+    </div>
+
+    <!-- Message Box Overlay -->
+    <div id="message-box-overlay" class="message-box-overlay">
+      <div id="message-box" class="message-box">
+        <h3 id="message-box-title" class="message-box-title"></h3>
+        <p id="message-box-content" class="message-box-content"></p>
+        <p id="message-box-source" class="message-box-source"></p>
+        <button id="message-box-close-button" class="message-box-close-button">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Three.js variables for Cosmic Background
+      let cosmicScene, cosmicCamera, cosmicRenderer, stars;
+      let cosmicWindowHalfX = window.innerWidth / 2;
+      let cosmicWindowHalfY = window.innerHeight / 2;
+
+      // Three.js variables for Bottle Model
+      let bottleScene,
+        bottleCamera,
+        bottleRenderer,
+        bottle,
+        bottlePlug,
+        notesGroup;
+      let bottleContainer;
+
+      // Animation variables for the plug
+      let plugState = "idle"; // 'idle', 'lifting', 'lowering'
+      let plugAnimationStartTime = 0;
+      let plugAnimationDuration = 600; // 0.6 seconds for lift/lower
+      let plugInitialPosY; // Stores the initial Y position of the plug
+      let plugTargetPosY;
+      const plugLiftAmount = 2.0; // How much the plug lifts relative to its current position
+
+      // Define the four colors for the notes
+      const noteColors = [
+        0x503156, // Dark Purple
+        0x6ea4bf, // Muted Blue
+        0xa31621, // Dark Red
+        0xbcd8c1, // Light Green/Grey
+      ];
+
+      // Map theme names to their hex color strings for modal text styling
+      const themeToHexColor = {
+        Love: "#a31621", // Corresponds to note-red
+        Temptation: "#503156", // Corresponds to note-purple
+        Anxiety: "#6ea4bf", // Corresponds to note-blue
+        Hope: "#bcd8c1", // Corresponds to note-green
+      };
+
+      // Passages data from the spreadsheet
+      const passagesData = {
+        Temptation: [
+          {
+            Source: "1 CORINTHIANS 10:14",
+            Body: "Therefore, my beloved, flee from the worship of idols.",
+            Version: "NSRV",
+          },
+          {
+            Source: "MARK 14:38",
+            Body: '"Stay awake and pray that you may not come into the time of trial; the spirit indeed is willing, but the flesh is weak."',
+            Version: "NSRV",
+          },
+          {
+            Source: "LUKE 22:46",
+            Body: 'He said to them, "Why are you sleeping? Get up and pray that you may not come into the time of trial."',
+            Version: "NSRV",
+          },
+          {
+            Source: "LUKE 4:13",
+            Body: "When the devil had finished every test, he departed from him until an opportune time.",
+            Version: "NSRV",
+          },
+          {
+            Source: "REVELATION 3:11",
+            Body: "I am coming soon; hold fast to what you have, so that no one may seize your crown.",
+            Version: "NSRV",
+          },
+          {
+            Source: "JAMES 1:12",
+            Body: "Blessed is anyone who endures temptation, for when once tested, that person will receive the crown of life that God has promised to those who love him.",
+            Version: "NSRV",
+          },
+          {
+            Source: "JAMES 1:2-3",
+            Body: "My brothers and sisters, whenever you face trials of any kind, consider it nothing but joy, because you know that the testing of your faith produces endurance.",
+            Version: "NSRV",
+          },
+          {
+            Source: "GALATIANS 5:23",
+            Body: "humility, self-control. There is no law against such things.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PHILIPPIANS 2:4",
+            Body: "Let each of you look not to your own interests, but to the interests of others.",
+            Version: "NSRV",
+          },
+          {
+            Source: "HEBREWS 13:18",
+            Body: "Pray for us; for we are sure that we have a clear conscience, desiring to act honorably in all things.",
+            Version: "NSRV",
+          },
+        ],
+        Love: [
+          {
+            Source: "ISAIAH 32:8",
+            Body: "But those who are noble plan noble things, and by noble things they stand.",
+            Version: "NSRV",
+          },
+          {
+            Source: "JAMES 4:8",
+            Body: "Draw near to God, and he will draw near to you. Cleanse your hands, you sinners, and purify your hearts, you double-minded.",
+            Version: "NSRV",
+          },
+          {
+            Source: "HEBREWS 11:1",
+            Body: "Now faith is the assurance of things hoped for, the conviction of things not seen.",
+            Version: "NSRV",
+          },
+          {
+            Source: "1 TIMOTHY 6:11",
+            Body: "But as for you, man of God, shun all this; pursue righteousness, godliness, faith, love, endurance, gentleness.",
+            Version: "NSRV",
+          },
+          {
+            Source: "MARK 9:23",
+            Body: 'Jesus said to him, "If you are able! All things can be done for the one who believes."',
+            Version: "NSRV",
+          },
+          {
+            Source: "ROMANS 12:12",
+            Body: "Rejoice in hope, be patient in suffering, persevere in prayer.",
+            Version: "NSRV",
+          },
+          {
+            Source: "ROMANS 15:13",
+            Body: "May the God of hope fill you with all joy and peace in believing, so that you may abound in hope by the power of the Holy Spirit.",
+            Version: "NSRV",
+          },
+        ],
+        Hope: [
+          {
+            Source: "PSALM 62:5",
+            Body: "For God alone my soul waits in silence, for my hope is from him.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PSALM 42:5",
+            Body: "Why are you cast down, O my soul, and why are you disquieted within me? Hope in God; for I shall again praise him, my help and my God.",
+            Version: "NSRV",
+          },
+          {
+            Source: "JEREMIAH 29:11",
+            Body: "For surely I know the plans I have for you, says the Lord, plans for your welfare and not for harm, to give you a future with hope.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PHILIPPIANS 4:13",
+            Body: "I can do all things through him who strengthens me.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PSALM 31:24",
+            Body: "Be strong, and let your heart take courage, all you who wait for the Lord.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PSALM 71:14",
+            Body: "But I will hope continually, and will praise you yet more and more.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PSALM 25:21",
+            Body: "May integrity and uprightness preserve me, for I wait for you.",
+            Version: "NSRV",
+          },
+        ],
+        Anxiety: [
+          {
+            Source: "JOHN 14:27",
+            Body: "Peace I leave with you; my peace I give to you. I do not give to you as the world gives. Do not let your hearts be troubled, and do not let them be afraid.",
+            Version: "NSRV",
+          },
+          {
+            Source: "1 PETER 5:7",
+            Body: "Cast all your anxiety on him, because he cares for you.",
+            Version: "NSRV",
+          },
+          {
+            Source: "MATTHEW 6:33",
+            Body: "But strive first for the kingdom of God and his righteousness, and all these things will be given to you as well.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PHILIPPIANS 4:7",
+            Body: "And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus.",
+            Version: "NSRV",
+          },
+          {
+            Source: "2 TIMOTHY 1:7",
+            Body: "For God did not give us a spirit of cowardice, but rather a spirit of power and of love and of self-discipline.",
+            Version: "NSRV",
+          },
+          {
+            Source: "PSALM 94:19",
+            Body: "When the cares of my heart are many, your consolations cheer my soul.",
+            Version: "NSRV",
+          },
+          {
+            Source: "LUKE 12:25",
+            Body: "And which of you by worrying can add a single hour to your span of life?",
+            Version: "NSRV",
+          },
+          {
+            Source: "PROVERBS 12:25",
+            Body: "Anxiety in a human heart weighs it down, but a good word makes it glad.",
+            Version: "NSRV",
+          },
+          {
+            Source: "JOSHUA 1:9",
+            Body: "I hereby command you: Be strong and courageous; do not be frightened or dismayed, for the Lord your God is with you wherever you go.",
+            Version: "NSRV",
+          },
+          {
+            Source: "COLOSSIANS 3:2",
+            Body: "Set your minds on things that are above, not on things that are on earth.",
+            Version: "NSRV",
+          },
+          {
+            Source: "HEBREWS 6:19",
+            Body: "We have this hope, a sure and steadfast anchor of the soul, a hope that enters the inner shrine behind the curtain,",
+            Version: "NSRV",
+          },
+        ],
+      };
+
+      function initCosmicBackground() {
+        const container = document.getElementById("cosmic-background");
+
+        cosmicScene = new THREE.Scene();
+        cosmicCamera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        cosmicCamera.position.z = 5;
+
+        cosmicRenderer = new THREE.WebGLRenderer({ antialias: true });
+        cosmicRenderer.setPixelRatio(window.devicePixelRatio);
+        cosmicRenderer.setSize(window.innerWidth, window.innerHeight);
+        container.appendChild(cosmicRenderer.domElement);
+
+        const starGeometry = new THREE.BufferGeometry();
+        const starVertices = [];
+        const numStars = 10000;
+
+        for (let i = 0; i < numStars; i++) {
+          const x = THREE.MathUtils.randFloatSpread(2000);
+          const y = THREE.MathUtils.randFloatSpread(2000);
+          const z = THREE.MathUtils.randFloatSpread(2000);
+          starVertices.push(x, y, z);
+        }
+        starGeometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(starVertices, 3)
+        );
+
+        const starMaterial = new THREE.PointsMaterial({
+          color: 0xe0e0e0,
+          size: 0.5, // Reverted star size for better appearance
+          transparent: true,
+          opacity: 0.8,
+          blending: THREE.AdditiveBlending,
+        });
+
+        stars = new THREE.Points(starGeometry, starMaterial);
+        cosmicScene.add(stars);
+
+        window.addEventListener("resize", onCosmicWindowResize);
+      }
+
+      function onCosmicWindowResize() {
+        cosmicWindowHalfX = window.innerWidth / 2;
+        cosmicWindowHalfY = window.innerHeight / 2;
+
+        cosmicCamera.aspect = window.innerWidth / window.innerHeight;
+        cosmicCamera.updateProjectionMatrix();
+        cosmicRenderer.setSize(window.innerWidth, window.innerHeight);
+      }
+
+      function animateCosmicBackground() {
+        requestAnimationFrame(animateCosmicBackground);
+
+        stars.rotation.x += 0.0005;
+        stars.rotation.y += 0.0005;
+
+        cosmicCamera.lookAt(cosmicScene.position);
+        cosmicRenderer.render(cosmicScene, cosmicCamera);
+      }
+
+      function initBottleModel() {
+        bottleContainer = document.getElementById("bottle-container");
+
+        // Scene
+        bottleScene = new THREE.Scene();
+
+        // Camera
+        bottleCamera = new THREE.PerspectiveCamera(
+          75,
+          bottleContainer.clientWidth / bottleContainer.clientHeight,
+          0.1,
+          1000
+        );
+        // Adjusted camera position for the larger bottle
+        bottleCamera.position.z = 21; // 3x the original 7
+
+        // Renderer
+        bottleRenderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+        }); // alpha: true for transparent background
+        bottleRenderer.setPixelRatio(window.devicePixelRatio);
+        bottleRenderer.setSize(
+          bottleContainer.clientWidth,
+          bottleContainer.clientHeight
+        );
+        bottleContainer.appendChild(bottleRenderer.domElement);
+
+        // 3D Bottle Model - Shorter and Wider profile, wider opening
+        const bottleProfile = [
+          new THREE.Vector2(0.0, -1.8), // Bottom center
+          new THREE.Vector2(2.5, -1.8), // Extend flat bottom to max base radius
+          new THREE.Vector2(2.5, -1.5), // Slightly higher point at same max radius for sharper corner
+          new THREE.Vector2(2.5, 0.8), // Wider body
+          new THREE.Vector2(2.0, 1.3), // Wider shoulder
+          new THREE.Vector2(1.5, 1.5), // Wider neck base
+          new THREE.Vector2(1.4, 1.8), // Wider neck
+          new THREE.Vector2(1.4, 2.0), // Wider top of neck
+          new THREE.Vector2(1.3, 2.0), // Wider lip
+        ];
+
+        const bottleGeometry = new THREE.LatheGeometry(bottleProfile, 32);
+        const bottleMaterial = new THREE.MeshStandardMaterial({
+          color: 0x80dfff, // Diamond Blue color (a light, clear blue)
+          transparent: true,
+          opacity: 0.6, // Make it semi-transparent
+          roughness: 0.2,
+          metalness: 0.1,
+          side: THREE.DoubleSide, // Render both sides of the material
+        });
+        bottle = new THREE.Mesh(bottleGeometry, bottleMaterial);
+        bottle.position.set(0, 0, 0); // Center the bottle in its own scene
+        // Tilt the bottle forward slightly (rotate around X-axis)
+        bottle.rotation.x = Math.PI * 0.08; // Approximately 15 degrees
+        // Scale the bottle
+        bottle.scale.set(3, 3, 3); // Triple the scale
+        bottleScene.add(bottle);
+
+        // Wooden Plug - Flatter
+        const plugHeight = 0.3; // Reduced height for flatter look
+        const plugGeometry = new THREE.CylinderGeometry(
+          1.3,
+          1.4,
+          plugHeight,
+          16
+        ); // Adjusted radii for wider opening
+        const plugMaterial = new THREE.MeshStandardMaterial({
+          color: 0x8b4513, // SaddleBrown for wood
+          roughness: 0.8,
+          metalness: 0.0,
+        });
+        bottlePlug = new THREE.Mesh(plugGeometry, plugMaterial);
+        // Position the plug on top of the bottle's neck, adjusted for new bottle height and scale
+        plugInitialPosY = 2.0 * 3 + (plugHeight * 3) / 2; // Store initial position
+        bottlePlug.position.set(0, plugInitialPosY, 0);
+        // Scale the plug
+        bottlePlug.scale.set(3, 3, 3);
+        // Tilt the plug with the bottle
+        bottlePlug.rotation.x = Math.PI * 0.08;
+        bottleScene.add(bottlePlug);
+
+        // Notes inside the bottle
+        notesGroup = new THREE.Group();
+        const numNotes = 34; // Number of notes
+        // Reverted note size to original
+        const noteSize = { width: 1.2, height: 0.9, depth: 0.08 };
+
+        // Reverted ranges for notes to stay inside the shorter, wider bottle
+        const innerBottleRadius = 1.5 * 3; // Reverted to original scaled radius
+        const innerBottleMinY = -1.4 * 3; // Reverted to original min Y
+        const innerBottleMaxY = 0.4 * 3; // Reverted to original max Y
+
+        for (let i = 0; i < numNotes; i++) {
+          const noteGeometry = new THREE.BoxGeometry(
+            noteSize.width,
+            noteSize.height,
+            noteSize.depth
+          );
+          const randomColor =
+            noteColors[Math.floor(Math.random() * noteColors.length)];
+          const noteMaterial = new THREE.MeshBasicMaterial({
+            color: randomColor,
+            side: THREE.DoubleSide,
+          });
+          const note = new THREE.Mesh(noteGeometry, noteMaterial);
+
+          // Random position within the bottle's approximate volume
+          let xPos, yPos, zPos;
+          let insideBottle = false;
+
+          // Attempt to place notes within a cylindrical volume that is well inside the bottle
+          while (!insideBottle) {
+            // Reverted spread to original
+            xPos = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.6);
+            yPos = THREE.MathUtils.randFloat(
+              innerBottleMinY + noteSize.height / 2,
+              innerBottleMaxY - noteSize.height / 2
+            );
+            zPos = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.6);
+
+            // Reverted safety margin
+            if (
+              Math.sqrt(xPos * xPos + zPos * zPos) <
+              innerBottleRadius * 0.9
+            ) {
+              insideBottle = true;
+            }
+          }
+
+          note.position.set(xPos, yPos, zPos);
+
+          // Random rotation
+          note.rotation.x = Math.random() * Math.PI;
+          note.rotation.y = Math.random() * Math.PI;
+          note.rotation.z = Math.random() * Math.PI;
+
+          notesGroup.add(note);
+        }
+        notesGroup.position.set(0, 0, 0); // Ensure the group is centered with the bottle
+        // Tilt the notes group with the bottle
+        notesGroup.rotation.x = Math.PI * 0.08;
+        bottleScene.add(notesGroup);
+
+        // Lighting for the 3D model
+        const ambientLight = new THREE.AmbientLight(0x404040, 2); // Soft white light
+        bottleScene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White directional light
+        directionalLight.position.set(5, 10, 7.5).normalize();
+        bottleScene.add(directionalLight);
+
+        window.addEventListener("resize", onBottleWindowResize);
+      }
+
+      function onBottleWindowResize() {
+        if (bottleContainer) {
+          bottleCamera.aspect =
+            bottleContainer.clientWidth / bottleContainer.clientHeight;
+          bottleCamera.updateProjectionMatrix();
+          bottleRenderer.setSize(
+            bottleContainer.clientWidth,
+            bottleContainer.clientHeight
+          );
+        }
+      }
+
+      function animatePlug(targetY, duration) {
+        // Only start animation if not already animating or if it's a new animation request
+        if (
+          plugState === "idle" ||
+          (plugState === "lifting" && targetY < bottlePlug.position.y) ||
+          (plugState === "lowering" && targetY > bottlePlug.position.y)
+        ) {
+          plugStartPosY = bottlePlug.position.y;
+          plugTargetPosY = targetY;
+          plugAnimationStartTime = performance.now();
+          plugAnimationDuration = duration;
+
+          if (targetY > plugStartPosY) {
+            plugState = "lifting";
+          } else {
+            plugState = "lowering";
+          }
+        }
+      }
+
+      function animateBottleModel() {
+        requestAnimationFrame(animateBottleModel);
+
+        // Rotate the bottle, its plug, and the notes group on their vertical (Y) axis
+        if (bottle) {
+          bottle.rotation.y += 0.005;
+        }
+        // The plug and notes group are children of the bottle in terms of rotation around Y
+        // but their X rotation is set once in initBottleModel
+        if (bottlePlug) {
+          // Only rotate around Y if it's not part of the main bottle group's rotation already
+          // For simplicity, we'll keep them rotating independently around Y if they were added directly to scene
+          // If they were added to the bottle object, this would be redundant for Y rotation.
+          // Since they are separate objects in the scene, we rotate them individually around Y.
+          bottlePlug.rotation.y += 0.005;
+        }
+        if (notesGroup) {
+          notesGroup.rotation.y += 0.005;
+        }
+
+        // Animate the plug lift/lower
+        if (plugState !== "idle" && bottlePlug) {
+          const elapsed = performance.now() - plugAnimationStartTime;
+          let progress = Math.min(elapsed / plugAnimationDuration, 1);
+
+          // Ease-out effect for smoother animation
+          progress = 0.5 - Math.cos(progress * Math.PI) / 2;
+
+          bottlePlug.position.y =
+            plugStartPosY + (plugTargetPosY - plugStartPosY) * progress;
+
+          if (progress === 1) {
+            // Animation phase complete, set state to idle
+            plugState = "idle";
+          }
+        }
+
+        bottleRenderer.render(bottleScene, bottleCamera);
+      }
+
+      // Function to calculate perceived luminance to determine text color contrast
+      function getLuminance(hexColor) {
+        const r = parseInt(hexColor.substring(1, 3), 16) / 255;
+        const g = parseInt(hexColor.substring(3, 5), 16) / 255;
+        const b = parseInt(hexColor.substring(5, 7), 16) / 255;
+
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      }
+
+      // Function to show the message box
+      function showMessageBox(title, content, source, textColorHex) {
+        // Added textColorHex parameter
+        const messageBoxOverlay = document.getElementById(
+          "message-box-overlay"
+        );
+        const messageBox = document.getElementById("message-box");
+        const msgTitle = document.getElementById("message-box-title");
+        const msgContent = document.getElementById("message-box-content");
+        const msgSource = document.getElementById("message-box-source");
+        const closeButton = document.getElementById("message-box-close-button");
+
+        msgTitle.innerText = title;
+        msgContent.innerText = content;
+        msgSource.innerText = source;
+
+        // Apply dark mode class if body is in dark mode
+        if (document.documentElement.classList.contains("dark")) {
+          messageBox.classList.add("dark");
+        } else {
+          messageBox.classList.remove("dark");
+        }
+
+        // Apply the specific text color to modal content
+        msgTitle.style.color = textColorHex;
+        msgContent.style.color = textColorHex;
+        msgSource.style.color = textColorHex;
+
+        // Apply the specific background color to the close button
+        closeButton.style.backgroundColor = textColorHex;
+
+        // Determine contrasting text color for the close button
+        const luminance = getLuminance(textColorHex);
+        // Use a threshold (e.g., 0.5 for sRGB) to decide between light and dark text
+        if (luminance > 0.5) {
+          closeButton.style.color = "var(--color-bold-green)"; // Dark text for light background
+        } else {
+          closeButton.style.color = "var(--color-soft-black)"; // Light text for dark background
+        }
+
+        messageBoxOverlay.classList.add("active");
+      }
+
+      // Function to hide the message box
+      function hideMessageBox() {
+        const messageBoxOverlay = document.getElementById(
+          "message-box-overlay"
+        );
+        messageBoxOverlay.classList.remove("active");
+
+        // Reset text colors to default when closing the modal
+        const msgTitle = document.getElementById("message-box-title");
+        const msgContent = document.getElementById("message-box-content");
+        const msgSource = document.getElementById("message-box-source");
+        const closeButton = document.getElementById("message-box-close-button");
+
+        // These are the default colors defined in CSS
+        msgTitle.style.color = ""; // Reset to CSS default
+        msgContent.style.color = ""; // Reset to CSS default
+        msgSource.style.color = ""; // Reset to CSS default
+
+        // Reset close button colors to default
+        closeButton.style.backgroundColor = ""; // Reset to CSS default
+        closeButton.style.color = ""; // Reset to CSS default
+
+        // Trigger plug lowering animation when message box is closed
+        if (plugState === "idle" && bottlePlug.position.y !== plugInitialPosY) {
+          // Only lower if it's not already idle and not at initial position
+          animatePlug(plugInitialPosY, plugAnimationDuration);
+        }
+      }
+
+      // Main JavaScript for page load and animations
+      window.onload = function () {
+        const overlay = document.getElementById("fade-overlay");
+        const content = document.getElementById("main-content");
+        const htmlElement = document.documentElement; // Still need this for dark mode class
+
+        // Initialize cosmic background
+        initCosmicBackground();
+        animateCosmicBackground(); // Start the cosmic animation loop
+
+        // Initialize bottle model
+        initBottleModel();
+        animateBottleModel(); // Start the bottle animation loop
+
+        // Set initial opacity of overlay to 1 (fully visible)
+        overlay.style.opacity = "1";
+
+        // After a short delay, fade out the overlay and fade in the content
+        setTimeout(() => {
+          overlay.style.opacity = "0"; // Start fading out the overlay
+          content.style.opacity = "1"; // Start fading in the content
+        }, 100); // Small delay to ensure initial opacity is set before transition
+
+        // Remove the overlay from the DOM after the transition completes
+        overlay.addEventListener("transitionend", () => {
+          overlay.remove();
+        });
+
+        // Get all buttons and add event listeners for the plug animation and passage display
+        const buttons = document.querySelectorAll(".grid button");
+        buttons.forEach((button) => {
+          button.addEventListener("click", () => {
+            if (plugState === "idle") {
+              // Only trigger if not already animating
+              animatePlug(
+                plugInitialPosY + plugLiftAmount,
+                plugAnimationDuration
+              ); // Lift the plug
+
+              // Get the theme from the button's data-theme attribute
+              const theme = button.dataset.theme;
+              const passages = passagesData[theme];
+              const textColor = themeToHexColor[theme]; // Get the corresponding hex color
+
+              if (passages && passages.length > 0) {
+                // Randomly select a passage
+                const randomIndex = Math.floor(Math.random() * passages.length);
+                const selectedPassage = passages[randomIndex];
+
+                // Show the message box with the selected passage and color
+                setTimeout(() => {
+                  showMessageBox(
+                    theme,
+                    selectedPassage.Body,
+                    selectedPassage.Source,
+                    textColor
+                  );
+                }, plugAnimationDuration / 2); // Show halfway through the lift
+              }
+            }
+          });
+        });
+
+        // Add event listener for the message box close button
+        document
+          .getElementById("message-box-close-button")
+          .addEventListener("click", hideMessageBox);
+      };
+    </script>
+  </body>
+</html>
