@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js CDN for 3D graphics -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <style>
       /* Custom colors for Tailwind CSS */
       :root {
@@ -67,60 +68,46 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: rgba(0, 0, 0, 0.9);
         display: flex;
         justify-content: center;
         align-items: center;
         z-index: 1000;
         opacity: 0;
         visibility: hidden;
-        transition: opacity 3s ease-in-out, visibility 3s ease-in-out; /* Changed to 3s */
-      }
-
-      .message-box-overlay.active {
-        opacity: 1;
-        visibility: visible;
       }
 
       .message-box {
-        background-color: white;
+        background-color: #444;
         padding: 2rem;
         border-radius: 0.75rem; /* rounded-xl */
         box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* shadow-lg */
         text-align: center;
         max-width: 90%;
         width: 400px;
-        transform: translateY(-20px);
-        opacity: 0;
-        transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
-      }
-
-      .message-box-overlay.active .message-box {
-        transform: translateY(0);
-        opacity: 1;
       }
 
       .message-box.dark {
-        background-color: var(--color-bold-green);
+        background-color: #011020;
         /* Text colors will be overridden by inline styles from JS */
       }
       /* Default text colors for light mode, overridden by JS for matching colors */
       .message-box-title {
-        font-size: 1.5rem; /* text-2xl */
+        font-size: 1.75rem; /* text-2xl on desktop */
         font-weight: 700; /* font-bold */
         margin-bottom: 1rem;
-        color: var(--color-navy-blue); /* Default for light mode */
+        color: white; /* Default for light mode */
       }
 
       .message-box-content {
-        font-size: 1.125rem; /* text-lg */
+        font-size: 1.25rem; /* text-lg on desktop */
         margin-bottom: 0.5rem;
-        color: #333; /* Default for light mode */
+        color: lightgray; /* Default for light mode */
       }
 
       .message-box-source {
-        font-size: 0.875rem; /* text-sm */
-        color: #666; /* Default for light mode */
+        font-size: 1rem; /* text-base on desktop */
+        color: lightgray; /* Default for light mode */
         margin-bottom: 1.5rem;
       }
 
@@ -174,26 +161,26 @@
               "navy-blue": "var(--color-navy-blue)",
               "bold-green": "var(--color-bold-green)",
               // Add the note colors to Tailwind config for easier use
-              "note-purple": "#503156",
+              "note-purple": "#e0b0ff",
               "note-blue": "#6ea4bf",
-              "note-red": "#a31621",
+              "note-red": "#e57373",
               "note-green": "#bcd8c1",
             },
             fontFamily: {
-              inter: ["Inter", "sans-serif"],
+              montserrat: ["Montserrat", "sans-serif"],
             },
           },
         },
       };
     </script>
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
   </head>
   <!-- Apply base styles for light mode, and dark: prefix for dark mode -->
   <body
-    class="font-inter bg-light-gray text-soft-black min-h-screen flex items-center justify-center p-4 dark:bg-bold-green dark:text-soft-black"
+    class="font-montserrat bg-light-gray text-soft-black min-h-screen flex items-center justify-center p-4 dark:bg-bold-green dark:text-soft-black"
   >
     <!-- Container for the Three.js cosmic background -->
     <div id="cosmic-background"></div>
@@ -207,13 +194,13 @@
     <!-- Main content of the SPA -->
     <div
       id="main-content"
-      class="opacity-0 transition-opacity duration-[4000ms] ease-in-out w-full max-w-4xl mx-auto rounded-xl shadow-lg p-8 md:p-12 flex flex-col items-center text-center dark:text-soft-black"
+      class="opacity-0 transition-opacity duration-[4000ms] ease-in-out w-full max-w-4xl mx-auto rounded-xl shadow-lg p-4 md:p-8 lg:p-12 flex flex-col items-center text-center dark:text-soft-black"
     >
-      <h1 class="text-4xl md:text-6xl font-extrabold gold-gradient-text mb-6">
+      <h1 class="text-5xl md:text-6xl font-extrabold gold-gradient-text mb-6">
         One For All
       </h1>
       <p
-        class="text-lg md:text-xl text-soft-black mb-8 max-w-2xl dark:text-soft-black"
+        class="text-xl md:text-2xl text-soft-black mb-8 max-w-2xl dark:text-soft-black"
       >
         Look within yourself to save yourself from your other self.<br />Only
         then will your true self reveal itself
@@ -223,28 +210,28 @@
       <div class="grid grid-cols-2 gap-4 mb-8 w-full max-w-md">
         <button
           id="love-button"
-          class="bg-note-red hover:bg-opacity-80 text-soft-black font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-red focus:ring-opacity-75"
+          class="bg-note-red hover:bg-opacity-80 text-soft-black font-semibold text-lg py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-red focus:ring-opacity-75"
           data-theme="Love"
         >
           Love
         </button>
         <button
           id="temptation-button"
-          class="bg-note-purple hover:bg-opacity-80 text-soft-black font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-purple focus:ring-opacity-75"
+          class="bg-note-purple hover:bg-opacity-80 text-soft-black font-semibold text-lg py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-purple focus:ring-opacity-75"
           data-theme="Temptation"
         >
           Temptation
         </button>
         <button
           id="anxiety-button"
-          class="bg-note-blue hover:bg-opacity-80 text-bold-green font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-blue focus:ring-opacity-75"
+          class="bg-note-blue hover:bg-opacity-80 text-bold-green font-semibold text-lg py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-blue focus:ring-opacity-75"
           data-theme="Anxiety"
         >
           Anxiety
         </button>
         <button
           id="hope-button"
-          class="bg-note-green hover:bg-opacity-80 text-bold-green font-semibold py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-green focus:ring-opacity-75"
+          class="bg-note-green hover:bg-opacity-80 text-bold-green font-semibold text-lg py-3 px-8 rounded-full shadow-md transition-all duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-note-green focus:ring-opacity-75"
           data-theme="Hope"
         >
           Hope
@@ -300,8 +287,8 @@
 
       // Map theme names to their hex color strings for modal text styling
       const themeToHexColor = {
-        Love: "#a31621", // Corresponds to note-red
-        Temptation: "#503156", // Corresponds to note-purple
+        Love: "#e57373", // Corresponds to note-red
+        Temptation: "#e0b0ff", // Corresponds to note-purple
         Anxiety: "#6ea4bf", // Corresponds to note-blue
         Hope: "#bcd8c1", // Corresponds to note-green
       };
@@ -588,25 +575,24 @@
 
         // 3D Bottle Model - Shorter and Wider profile, wider opening
         const bottleProfile = [
-          new THREE.Vector2(0.0, -1.8), // Bottom center
-          new THREE.Vector2(2.5, -1.8), // Extend flat bottom to max base radius
-          new THREE.Vector2(2.5, -1.5), // Slightly higher point at same max radius for sharper corner
-          new THREE.Vector2(2.5, 0.8), // Wider body
-          new THREE.Vector2(2.0, 1.3), // Wider shoulder
-          new THREE.Vector2(1.5, 1.5), // Wider neck base
-          new THREE.Vector2(1.4, 1.8), // Wider neck
-          new THREE.Vector2(1.4, 2.0), // Wider top of neck
-          new THREE.Vector2(1.3, 2.0), // Wider lip
+          new THREE.Vector2(0.0, -2.5),  // Bottom center
+          new THREE.Vector2(3.0, -2.5),  // Wider Base
+          new THREE.Vector2(3.0, -1.0),  // Short, wide body
+          new THREE.Vector2(2.8, -0.5),  // Curve point 1
+          new THREE.Vector2(2.5, 0.0),   // Curve point 2
+          new THREE.Vector2(1.5, 0.5),   // Shoulder
+          new THREE.Vector2(1.5, 2.0),   // Straight neck
+          new THREE.Vector2(1.6, 2.1),   // Lip
         ];
 
         const bottleGeometry = new THREE.LatheGeometry(bottleProfile, 32);
         const bottleMaterial = new THREE.MeshStandardMaterial({
-          color: 0x80dfff, // Diamond Blue color (a light, clear blue)
+          color: 0xffffff, // Clear color
           transparent: true,
-          opacity: 0.6, // Make it semi-transparent
-          roughness: 0.2,
-          metalness: 0.1,
-          side: THREE.DoubleSide, // Render both sides of the material
+          opacity: 0.2,
+          roughness: 0.1,
+          metalness: 0.2,
+          side: THREE.DoubleSide,
         });
         bottle = new THREE.Mesh(bottleGeometry, bottleMaterial);
         bottle.position.set(0, 0, 0); // Center the bottle in its own scene
@@ -617,21 +603,21 @@
         bottleScene.add(bottle);
 
         // Wooden Plug - Flatter
-        const plugHeight = 0.3; // Reduced height for flatter look
-        const plugGeometry = new THREE.CylinderGeometry(
-          1.3,
-          1.4,
-          plugHeight,
-          16
-        ); // Adjusted radii for wider opening
+        const plugHeight = 0.6; // Increased height for thicker look
         const plugMaterial = new THREE.MeshStandardMaterial({
           color: 0x8b4513, // SaddleBrown for wood
           roughness: 0.8,
           metalness: 0.0,
         });
+        const plugGeometry = new THREE.CylinderGeometry(
+          1.5,
+          1.6,
+          plugHeight,
+          16
+        );
         bottlePlug = new THREE.Mesh(plugGeometry, plugMaterial);
         // Position the plug on top of the bottle's neck, adjusted for new bottle height and scale
-        plugInitialPosY = 2.0 * 3 + (plugHeight * 3) / 2; // Store initial position
+        plugInitialPosY = 2.1 * 3 + (plugHeight * 3) / 2; // Store initial position (adjusted for new neck and plug height)
         bottlePlug.position.set(0, plugInitialPosY, 0);
         // Scale the plug
         bottlePlug.scale.set(3, 3, 3);
@@ -641,14 +627,52 @@
 
         // Notes inside the bottle
         notesGroup = new THREE.Group();
-        const numNotes = 34; // Number of notes
-        // Reverted note size to original
-        const noteSize = { width: 1.2, height: 0.9, depth: 0.08 };
+        const numNotes = 15; // Reduced number of notes
+        const noteSize = { width: 2.4, height: 1.8, depth: 0.08 };
 
-        // Reverted ranges for notes to stay inside the shorter, wider bottle
-        const innerBottleRadius = 1.5 * 3; // Reverted to original scaled radius
-        const innerBottleMinY = -1.4 * 3; // Reverted to original min Y
-        const innerBottleMaxY = 0.4 * 3; // Reverted to original max Y
+        // Adjust ranges for notes to be within the new bottle shape
+        const innerBottleRadius = 2.8 * 3;
+        const innerBottleMinY = -2.0 * 3;
+        const innerBottleMaxY = -1.0 * 3;
+
+        function animateNote(note) {
+          let newX, newY, newZ;
+          let insideBottle = false;
+          while(!insideBottle) {
+            newX = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.8);
+            newY = THREE.MathUtils.randFloat(
+              innerBottleMinY + noteSize.height / 2,
+              innerBottleMaxY - noteSize.height / 2
+            );
+            newZ = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.8);
+            if (Math.sqrt(newX * newX + newZ * newZ) < innerBottleRadius * 0.95) {
+              insideBottle = true;
+            }
+          }
+
+          const newRotX = note.rotation.x + THREE.MathUtils.randFloat(-Math.PI, Math.PI);
+          const newRotY = note.rotation.y + THREE.MathUtils.randFloat(-Math.PI, Math.PI);
+          const newRotZ = note.rotation.z + THREE.MathUtils.randFloat(-Math.PI, Math.PI);
+
+          anime({
+            targets: note.position,
+            x: newX,
+            y: newY,
+            z: newZ,
+            duration: THREE.MathUtils.randFloat(3750, 7500),
+            easing: 'easeInOutSine',
+            complete: () => animateNote(note)
+          });
+
+          anime({
+            targets: note.rotation,
+            x: newRotX,
+            y: newRotY,
+            z: newRotZ,
+            duration: THREE.MathUtils.randFloat(3750, 7500),
+            easing: 'easeInOutSine',
+          });
+        }
 
         for (let i = 0; i < numNotes; i++) {
           const noteGeometry = new THREE.BoxGeometry(
@@ -670,18 +694,16 @@
 
           // Attempt to place notes within a cylindrical volume that is well inside the bottle
           while (!insideBottle) {
-            // Reverted spread to original
-            xPos = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.6);
+            xPos = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.8);
             yPos = THREE.MathUtils.randFloat(
               innerBottleMinY + noteSize.height / 2,
               innerBottleMaxY - noteSize.height / 2
             );
-            zPos = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.6);
+            zPos = THREE.MathUtils.randFloatSpread(innerBottleRadius * 2 * 0.8);
 
-            // Reverted safety margin
             if (
               Math.sqrt(xPos * xPos + zPos * zPos) <
-              innerBottleRadius * 0.9
+              innerBottleRadius * 0.95
             ) {
               insideBottle = true;
             }
@@ -695,6 +717,7 @@
           note.rotation.z = Math.random() * Math.PI;
 
           notesGroup.add(note);
+          animateNote(note);
         }
         notesGroup.position.set(0, 0, 0); // Ensure the group is centered with the bottle
         // Tilt the notes group with the bottle
@@ -746,23 +769,6 @@
       function animateBottleModel() {
         requestAnimationFrame(animateBottleModel);
 
-        // Rotate the bottle, its plug, and the notes group on their vertical (Y) axis
-        if (bottle) {
-          bottle.rotation.y += 0.005;
-        }
-        // The plug and notes group are children of the bottle in terms of rotation around Y
-        // but their X rotation is set once in initBottleModel
-        if (bottlePlug) {
-          // Only rotate around Y if it's not part of the main bottle group's rotation already
-          // For simplicity, we'll keep them rotating independently around Y if they were added directly to scene
-          // If they were added to the bottle object, this would be redundant for Y rotation.
-          // Since they are separate objects in the scene, we rotate them individually around Y.
-          bottlePlug.rotation.y += 0.005;
-        }
-        if (notesGroup) {
-          notesGroup.rotation.y += 0.005;
-        }
-
         // Animate the plug lift/lower
         if (plugState !== "idle" && bottlePlug) {
           const elapsed = performance.now() - plugAnimationStartTime;
@@ -794,10 +800,7 @@
 
       // Function to show the message box
       function showMessageBox(title, content, source, textColorHex) {
-        // Added textColorHex parameter
-        const messageBoxOverlay = document.getElementById(
-          "message-box-overlay"
-        );
+        const messageBoxOverlay = document.getElementById("message-box-overlay");
         const messageBox = document.getElementById("message-box");
         const msgTitle = document.getElementById("message-box-title");
         const msgContent = document.getElementById("message-box-content");
@@ -808,58 +811,67 @@
         msgContent.innerText = content;
         msgSource.innerText = source;
 
-        // Apply dark mode class if body is in dark mode
         if (document.documentElement.classList.contains("dark")) {
           messageBox.classList.add("dark");
         } else {
           messageBox.classList.remove("dark");
         }
 
-        // Apply the specific text color to modal content
         msgTitle.style.color = textColorHex;
         msgContent.style.color = textColorHex;
         msgSource.style.color = textColorHex;
-
-        // Apply the specific background color to the close button
         closeButton.style.backgroundColor = textColorHex;
 
-        // Determine contrasting text color for the close button
         const luminance = getLuminance(textColorHex);
-        // Use a threshold (e.g., 0.5 for sRGB) to decide between light and dark text
         if (luminance > 0.5) {
-          closeButton.style.color = "var(--color-bold-green)"; // Dark text for light background
+          closeButton.style.color = "var(--color-bold-green)";
         } else {
-          closeButton.style.color = "var(--color-soft-black)"; // Light text for dark background
+          closeButton.style.color = "var(--color-soft-black)";
         }
 
-        messageBoxOverlay.classList.add("active");
+        anime.timeline({
+          easing: 'easeOutExpo',
+        })
+        .add({
+          targets: messageBoxOverlay,
+          opacity: [0, 1],
+          duration: 500,
+          begin: () => {
+            messageBoxOverlay.style.visibility = 'visible';
+          }
+        })
+        .add({
+          targets: messageBox,
+          scale: [0.9, 1],
+          opacity: [0, 1],
+          duration: 500
+        }, '-=300');
       }
 
       // Function to hide the message box
       function hideMessageBox() {
-        const messageBoxOverlay = document.getElementById(
-          "message-box-overlay"
-        );
-        messageBoxOverlay.classList.remove("active");
+        const messageBoxOverlay = document.getElementById("message-box-overlay");
+        const messageBox = document.getElementById("message-box");
 
-        // Reset text colors to default when closing the modal
-        const msgTitle = document.getElementById("message-box-title");
-        const msgContent = document.getElementById("message-box-content");
-        const msgSource = document.getElementById("message-box-source");
-        const closeButton = document.getElementById("message-box-close-button");
+        anime.timeline({
+          easing: 'easeOutExpo',
+        })
+        .add({
+          targets: messageBox,
+          scale: [1, 0.9],
+          opacity: [1, 0],
+          duration: 300
+        })
+        .add({
+          targets: messageBoxOverlay,
+          opacity: [1, 0],
+          duration: 300,
+          complete: () => {
+            messageBoxOverlay.style.visibility = 'hidden';
+          }
+        }, '-=200');
 
-        // These are the default colors defined in CSS
-        msgTitle.style.color = ""; // Reset to CSS default
-        msgContent.style.color = ""; // Reset to CSS default
-        msgSource.style.color = ""; // Reset to CSS default
-
-        // Reset close button colors to default
-        closeButton.style.backgroundColor = ""; // Reset to CSS default
-        closeButton.style.color = ""; // Reset to CSS default
-
-        // Trigger plug lowering animation when message box is closed
         if (plugState === "idle" && bottlePlug.position.y !== plugInitialPosY) {
-          // Only lower if it's not already idle and not at initial position
           animatePlug(plugInitialPosY, plugAnimationDuration);
         }
       }
@@ -868,52 +880,82 @@
       window.onload = function () {
         const overlay = document.getElementById("fade-overlay");
         const content = document.getElementById("main-content");
-        const htmlElement = document.documentElement; // Still need this for dark mode class
+        const htmlElement = document.documentElement;
 
-        // Initialize cosmic background
         initCosmicBackground();
-        animateCosmicBackground(); // Start the cosmic animation loop
+        animateCosmicBackground();
 
-        // Initialize bottle model
         initBottleModel();
-        animateBottleModel(); // Start the bottle animation loop
+        animateBottleModel();
 
-        // Set initial opacity of overlay to 1 (fully visible)
+        anime({
+          targets: [bottle.rotation, bottlePlug.rotation, notesGroup.rotation],
+          y: `+=${Math.PI * 2}`, // Relative rotation
+          duration: 16000,
+          easing: 'linear',
+          loop: true
+        });
+
         overlay.style.opacity = "1";
 
-        // After a short delay, fade out the overlay and fade in the content
         setTimeout(() => {
-          overlay.style.opacity = "0"; // Start fading out the overlay
-          content.style.opacity = "1"; // Start fading in the content
-        }, 100); // Small delay to ensure initial opacity is set before transition
+          overlay.style.opacity = "0";
+          content.style.opacity = "1";
+        }, 100);
 
-        // Remove the overlay from the DOM after the transition completes
         overlay.addEventListener("transitionend", () => {
           overlay.remove();
         });
 
-        // Get all buttons and add event listeners for the plug animation and passage display
+        // Animate title
+        const title = document.querySelector('h1');
+        const titleText = title.textContent;
+        title.innerHTML = '';
+        titleText.split('').forEach(letter => {
+          const span = document.createElement('span');
+          span.textContent = letter;
+          span.style.display = 'inline-block';
+          title.appendChild(span);
+        });
+
+        anime.timeline({loop: false})
+          .add({
+            targets: 'h1 span',
+            translateY: [-20, 0],
+            opacity: [0, 1],
+            easing: "easeOutExpo",
+            duration: 1500,
+            delay: anime.stagger(100),
+          });
+
+        // Animate buttons
+        anime({
+          targets: '.grid button',
+          translateY: [20, 0],
+          opacity: [0,1],
+          duration: 1500,
+          delay: anime.stagger(150, {start: 500}),
+          easing: 'easeOutExpo'
+        });
+
+
         const buttons = document.querySelectorAll(".grid button");
         buttons.forEach((button) => {
           button.addEventListener("click", () => {
             if (plugState === "idle") {
-              // Only trigger if not already animating
               animatePlug(
                 plugInitialPosY + plugLiftAmount,
                 plugAnimationDuration
-              ); // Lift the plug
+              );
 
-              // Get the theme from the button's data-theme attribute
               const theme = button.dataset.theme;
               const passages = passagesData[theme];
-              const textColor = themeToHexColor[theme]; // Get the corresponding hex color
+              const textColor = themeToHexColor[theme];
 
               if (passages && passages.length > 0) {
-                // Randomly select a passage
                 const randomIndex = Math.floor(Math.random() * passages.length);
                 const selectedPassage = passages[randomIndex];
 
-                // Show the message box with the selected passage and color
                 setTimeout(() => {
                   showMessageBox(
                     theme,
@@ -921,13 +963,12 @@
                     selectedPassage.Source,
                     textColor
                   );
-                }, plugAnimationDuration / 2); // Show halfway through the lift
+                }, plugAnimationDuration / 2);
               }
             }
           });
         });
 
-        // Add event listener for the message box close button
         document
           .getElementById("message-box-close-button")
           .addEventListener("click", hideMessageBox);
